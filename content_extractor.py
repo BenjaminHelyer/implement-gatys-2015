@@ -1,5 +1,7 @@
 """Class that extracts the content representation of an image."""
+import json
 
+import torch
 import torchvision.models as models
 import torchvision.transforms as transforms
 from PIL import Image
@@ -37,8 +39,28 @@ class ContentExtractor:
         """Gets the feature map for a given image at a specified layer."""
         return None
     
+    # TODO: make a unit test based on this with a few known images
+    def get_top_k_predictions(self, k=5):
+        """Gets the top k predictions of the original image based on VGG output.
+        
+        Can be used as a sanity test to ensure VGG is processing your image correctly.
+        """
+        top_preds = []
+
+        predicted_outputs = self.vgg_model(myExtractor.orig_img)
+
+        with open('.data/imagenet_class_index.json', 'r') as f:
+            class_index = json.load(f)
+
+        _, preds = torch.topk(predicted_outputs, k=k)
+        for pred_class in preds[0]:
+            predicted_class = class_index[str(pred_class.item())]
+            top_preds += [predicted_class]
+
+        return top_preds
+    
 if __name__ == '__main__':
     print("Playing around with VGG + content extraction.")
     myExtractor = ContentExtractor("OM_PICTURE.jpg", 0)
-    myExtractor.vgg_model
-    
+
+    print(myExtractor.get_top_k_predictions(k=10))
