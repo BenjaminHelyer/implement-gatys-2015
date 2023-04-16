@@ -8,7 +8,8 @@ from src.content_extractor import ContentExtractor
 test_file_path = Path(__file__).resolve().parent / "test_imgs"
 
 @pytest.mark.parametrize("img_path,expected_pred", 
-                         [(test_file_path / 'alaskan_king_crab.jpg','king_crab')])
+                         [(test_file_path / 'alaskan_king_crab.jpg','king_crab'),
+                          (test_file_path / 'english_setter.jpg', 'English_setter')])
 def test_vgg_predictions(img_path,expected_pred):
     """Tests the top predictions from the VGG model.
     
