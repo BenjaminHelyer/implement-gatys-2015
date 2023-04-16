@@ -39,7 +39,6 @@ class ContentExtractor:
         """Gets the feature map for a given image at a specified layer."""
         return None
     
-    # TODO: make a unit test based on this with a few known images
     def get_top_k_predictions(self, k=5):
         """Gets the top k predictions of the original image based on VGG output.
         
@@ -58,9 +57,3 @@ class ContentExtractor:
             top_preds += [predicted_class]
 
         return top_preds
-    
-if __name__ == '__main__':
-    print("Playing around with VGG + content extraction.")
-    myExtractor = ContentExtractor("./OM_PICTURE.jpg", 0)
-
-    print(myExtractor.get_top_k_predictions(k=10))
