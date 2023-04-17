@@ -1,10 +1,14 @@
 """Class that extracts the content representation of an image."""
 import json
+from pathlib import Path
 
 import torch
 import torchvision.models as models
 import torchvision.transforms as transforms
+import torchvision.utils as utils
+import matplotlib.pyplot as plt
 from PIL import Image
+import numpy as np
 
 class ContentExtractor:
     def __init__(self, orig_img_path, feature_layer):
@@ -57,3 +61,31 @@ class ContentExtractor:
             top_preds += [predicted_class]
 
         return top_preds
+    
+    def visualize_activations(self):
+        """Visualizes the activations from the VGG model."""
+        activations = {}
+ 
+        # we perform the forward pass here, just as we would when implementing the model
+        # in this case, however, we append the activation values to the dict
+        x = self.orig_img
+        for module in self.vgg_model.features:
+            x = module(x)
+            activations[str(module)] = x
+
+        fig, axes = plt.subplots(1, len(activations), figsize=(15, 5))
+        for i, layer_name in enumerate(activations):
+            activations_tensor = activations[layer_name]
+            activations_np = activations_tensor.detach().squeeze(0).cpu().numpy()
+            heatmap = np.mean(activations_np, axis=0)
+            axes[i].imshow(heatmap, cmap='jet')
+            axes[i].set_title(layer_name)
+            axes[i].axis('off')
+
+        plt.show()
+
+    
+if __name__ == '__main__':
+    path_king_crab = Path(__file__).resolve().parent.parent / "tests/test_imgs/alaskan_king_crab.jpg"
+    myExtractor = ContentExtractor(path_king_crab, 0)
+    myExtractor.visualize_activations()
