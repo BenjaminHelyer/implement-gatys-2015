@@ -11,7 +11,9 @@ from PIL import Image
 import numpy as np
 
 class ContentExtractor:
-    def __init__(self, orig_img_path, feature_layer):
+    def __init__(self, 
+                 orig_img_path, 
+                 feature_layer_name='Conv2d(3, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))'):
         """Class for extracting the conent of a given image.
         
         orig_img: img path that we want to extract the content of
@@ -26,7 +28,7 @@ class ContentExtractor:
                                     ])
 
         self.orig_img = self._preprocess_img(orig_img_path, self.preprocess_transform)
-        self.feature_layer = feature_layer
+        self.orig_content = self._extract_content(feature_layer_name)
 
     def _preprocess_img(self, img_path, transform):
         """Performs preprocessing for an image, allowing us to hand it to VGG."""
@@ -85,12 +87,16 @@ class ContentExtractor:
 
         plt.show()
 
-    def _extract_content(self, layer):
+    def _extract_content(self, layer_name):
         """Yields a tensor representing the content of the given layer."""
         activations = self._get_activations()
+
+        content = activations[layer_name]
+
+        return content
 
     
 if __name__ == '__main__':
     path_king_crab = Path(__file__).resolve().parent.parent / "tests/test_imgs/alaskan_king_crab.jpg"
-    myExtractor = ContentExtractor(path_king_crab, 0)
+    myExtractor = ContentExtractor(path_king_crab)
     myExtractor.visualize_activations()

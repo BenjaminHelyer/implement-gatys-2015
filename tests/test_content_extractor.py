@@ -16,7 +16,7 @@ def test_vgg_predictions(img_path,expected_pred):
     Acts as a sanity test to ensure the model which
     ContentExtractor uses is yielding plausible predictions.
     """
-    uutContentExtractor = ContentExtractor(img_path, 0)
+    uutContentExtractor = ContentExtractor(img_path)
     actual_preds = uutContentExtractor.get_top_k_predictions()
     print(actual_preds) # turn on viewing these preds with -s in pytest
     for pred in actual_preds:
