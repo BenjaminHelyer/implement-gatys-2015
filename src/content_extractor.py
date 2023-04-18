@@ -25,12 +25,10 @@ class ContentExtractor:
                                                         std=[0.229, 0.224, 0.225])
                                     ])
 
-        self.orig_img = self.preprocess_img(orig_img_path, self.preprocess_transform)
+        self.orig_img = self._preprocess_img(orig_img_path, self.preprocess_transform)
         self.feature_layer = feature_layer
-        
-        self.orig_content = self.get_feature_map(orig_img_path, feature_layer)
 
-    def preprocess_img(self, img_path, transform):
+    def _preprocess_img(self, img_path, transform):
         """Performs preprocessing for an image, allowing us to hand it to VGG."""
         img = Image.open(img_path)
         transformed_img = transform(img)
@@ -38,10 +36,6 @@ class ContentExtractor:
         # in this case we have just one image, so we add a dimension of size 1 denoting the batch size
         transformed_img_batch = transformed_img.unsqueeze(0)
         return transformed_img_batch
-
-    def get_feature_map(self, img, layer):
-        """Gets the feature map for a given image at a specified layer."""
-        return None
     
     def get_top_k_predictions(self, k=5):
         """Gets the top k predictions of the original image based on VGG output.
@@ -62,27 +56,38 @@ class ContentExtractor:
 
         return top_preds
     
-    def visualize_activations(self):
-        """Visualizes the activations from the VGG model."""
+    def _get_activations(self):
+        """Gets all the activations of the image for each layer of the network."""
         activations = {}
- 
+
         # we perform the forward pass here, just as we would when implementing the model
         # in this case, however, we append the activation values to the dict
-        x = self.orig_img
-        for module in self.vgg_model.features:
-            x = module(x)
-            activations[str(module)] = x
+        with torch.no_grad():
+            x = self.orig_img
+            for module in self.vgg_model.features:
+                x = module(x)
+                activations[str(module)] = x
 
-        fig, axes = plt.subplots(1, len(activations), figsize=(15, 5))
+        return activations
+    
+    def visualize_activations(self):
+        """Visualizes the activations from the VGG model."""
+        activations = self._get_activations()
+
+        fig, axes = plt.subplots(len(activations), 1, figsize=(15, 5))
         for i, layer_name in enumerate(activations):
             activations_tensor = activations[layer_name]
-            activations_np = activations_tensor.detach().squeeze(0).cpu().numpy()
+            activations_np = activations_tensor.squeeze(0).cpu().numpy()
             heatmap = np.mean(activations_np, axis=0)
             axes[i].imshow(heatmap, cmap='jet')
             axes[i].set_title(layer_name)
             axes[i].axis('off')
 
         plt.show()
+
+    def _extract_content(self, layer):
+        """Yields a tensor representing the content of the given layer."""
+        activations = self._get_activations()
 
     
 if __name__ == '__main__':
