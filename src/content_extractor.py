@@ -136,45 +136,46 @@ class ContentExtractor:
         axes.axis('off')
         plt.show()
 
-    def generate_content_image(self, num_epoch = 10, learn_rate = 0.1):
+    def generate_content_image(self, num_epoch = 10, learn_rate = 0.1, base_img_path=None):
         """Generates an image that is similar in content to the original image."""
-        generated_image = self._generate_white_noise_img()
-
-        # need a slightly different transform since we're reading in a numpy array generated via OpenCV
-        alt_transform = transforms.Compose([transforms.ToPILImage(),
-                                    transforms.Resize((224, 224)),
-                                    transforms.ToTensor(),
-                                    transforms.Normalize(mean=[0.485, 0.456, 0.406], 
-                                                        std=[0.229, 0.224, 0.225])
-                                    ])
         # let's use an actual neural net here which is the subset of the VGG net, since we're only interested in one output
         features = nn.Sequential(*list(self.vgg_model.features.children())[:self.feature_layer_num+1])
         features.eval()
 
-        transformed_gen_img = alt_transform(generated_image)
-        transformed_gen_img_batch = transformed_gen_img.unsqueeze(0)
-        curr_gen_tensor = transformed_gen_img_batch.clone()
-        curr_gen_tensor = curr_gen_tensor.to('cuda')
-        curr_gen_tensor.requires_grad = True
+        if base_img_path is None:
+            generated_image = self._generate_white_noise_img()
+
+            # need a slightly different transform since we're reading in a numpy array generated via OpenCV
+            alt_transform = transforms.Compose([transforms.ToPILImage(),
+                                        transforms.Resize((224, 224)),
+                                        transforms.ToTensor(),
+                                        transforms.Normalize(mean=[0.485, 0.456, 0.406], 
+                                                            std=[0.229, 0.224, 0.225])
+                                        ])
+            transformed_gen_img = alt_transform(generated_image)
+            transformed_gen_img_batch = transformed_gen_img.unsqueeze(0)
+            curr_gen_tensor = transformed_gen_img_batch.clone()
+            curr_gen_tensor = curr_gen_tensor.to('cuda')
+            curr_gen_tensor.requires_grad = True
+        else:
+            transformed_gen_img_batch = self._preprocess_img(base_img_path, self.preprocess_transform)
+            curr_gen_tensor = transformed_gen_img_batch.clone()
+            curr_gen_tensor.requires_grad = True
 
         criterion = nn.MSELoss()
         # it seems they technically don't use SGD in the paper, but it should be fine
         optimizer = optim.SGD([curr_gen_tensor], lr=learn_rate)
-        scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[1000,1500], gamma=0.5)
+        scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[500,1000], gamma=0.5)
 
         for _ in range(0, num_epoch):
             optimizer.zero_grad()
             gen_feature_layer = features.forward(curr_gen_tensor)
             loss = criterion(gen_feature_layer, self.orig_content)
-            print("Loss = ", str(loss))
             loss.backward()
             optimizer.step() 
             scheduler.step()
 
         final_img = curr_gen_tensor.squeeze(0).cpu().detach().numpy().transpose()
-        cv2.imshow('test1',generated_image)
-        cv2.imshow('test',final_img)
-        cv2.waitKey()
         return final_img
     
 if __name__ == '__main__':
@@ -182,8 +183,11 @@ if __name__ == '__main__':
     if cuda:
         torch.set_default_tensor_type('torch.cuda.FloatTensor')
     path_king_crab = Path(__file__).resolve().parent.parent / "tests/test_imgs/alaskan_king_crab.jpg"
+    path_english_setter = Path(__file__).resolve().parent.parent / "tests/test_imgs/english_setter.jpg"
     myExtractor = ContentExtractor(path_king_crab)
     # myExtractor.visualize_activations([0, 1, 2, 3])
     # myExtractor.visualize_activations([26, 27, 28, 29, 30])
     # myExtractor.visualize_original_content()
-    myExtractor.generate_content_image(num_epoch=2000, learn_rate=100)
+    gen_content = myExtractor.generate_content_image(num_epoch=1000, learn_rate=100, base_img_path=path_english_setter)
+    cv2.imshow('Generated Content Image',gen_content)
+    cv2.waitKey()
