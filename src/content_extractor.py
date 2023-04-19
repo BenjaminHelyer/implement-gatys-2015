@@ -6,6 +6,8 @@ import torch
 import torchvision.models as models
 import torchvision.transforms as transforms
 import torchvision.utils as utils
+import torch.optim as optim
+import torch.nn as nn
 import matplotlib.pyplot as plt
 from PIL import Image
 import numpy as np
@@ -24,17 +26,19 @@ class ContentExtractor:
         which corresponds to layer number 19 by the ordering in our implementation.
         """
         self.vgg_model = models.vgg16(pretrained=True)
+        self.vgg_model.eval() # ensure we don't train the weights of this
         self.preprocess_transform = transforms.Compose([
                                     transforms.Resize((224, 224)),
                                     transforms.ToTensor(),
                                     transforms.Normalize(mean=[0.485, 0.456, 0.406], 
                                                         std=[0.229, 0.224, 0.225])
                                     ])
+        
+        self.orig_img_path = orig_img_path
+        self.feature_layer_num = feature_layer_num
 
-        self.orig_img = self._preprocess_img(orig_img_path, self.preprocess_transform)
-        self.orig_content = self._extract_content(feature_layer_num)
-
-        self.random_image = self._generate_white_noise_img()
+        self.orig_img = self._preprocess_img(self.orig_img_path, self.preprocess_transform)
+        self.orig_content = self._extract_content(self.feature_layer_num)
 
     def _preprocess_img(self, img_path, transform):
         """Performs preprocessing for an image, allowing us to hand it to VGG."""
@@ -43,13 +47,15 @@ class ContentExtractor:
         # note that VGG expects an image batch, so we have to add a dimension of the batch size
         # in this case we have just one image, so we add a dimension of size 1 denoting the batch size
         transformed_img_batch = transformed_img.unsqueeze(0)
+        transformed_img_batch = transformed_img_batch.to(device='cuda')
         return transformed_img_batch
     
     def _generate_white_noise_img(self):
         """Generates a white noise image based on a seed."""
         uniform_noise = np.zeros((224, 224),dtype=np.uint8)
         cv2.randu(uniform_noise,0,255)
-        return uniform_noise
+        rgb_uniform_noise = cv2.cvtColor(uniform_noise,cv2.COLOR_GRAY2RGB)
+        return rgb_uniform_noise
     
     def get_top_k_predictions(self, k=5):
         """Gets the top k predictions of the original image based on VGG output.
@@ -75,7 +81,8 @@ class ContentExtractor:
         activations = []
 
         # we perform the forward pass here, just as we would when implementing the model
-        # in this case, however, we append the activation values to the dict
+        # in this case, however, we append the activation values to the list
+        # we do not track the grad here as we aren't performing gradient descent
         with torch.no_grad():
             x = self.orig_img
             for module in self.vgg_model.features:
@@ -83,6 +90,19 @@ class ContentExtractor:
                 activations += [x]
 
         return activations
+    
+    def _get_feature_generated_img(self, generated_img):
+        """Gets the feature layer for the generated image."""
+        activations = []
+
+        # distinct from activations func because we *do* want to track the grad here
+        x = generated_img
+        for module in self.vgg_model.features:
+            x = module(x)
+            activations += [x]
+
+        feature_tensor = activations[self.feature_layer_num]
+        return feature_tensor
     
     def visualize_activations(self, layers_to_plot = [0, 2, 5, 10, 19]):
         """Visualizes the activations from the VGG model."""
@@ -116,19 +136,54 @@ class ContentExtractor:
         axes.axis('off')
         plt.show()
 
-    def generate_content_image(self):
+    def generate_content_image(self, num_epoch = 10, learn_rate = 0.1):
         """Generates an image that is similar in content to the original image."""
-        # generate a random white noise image
-            # idea for white noise: go thru pixel by pixel and add uniform random values
-        # pass thru new image and get activation
-        # perform gradient descent on the new activation vs the old activation
-        # update new image somehow
-        # continue for certain num of epochs
-        return None
+        generated_image = self._generate_white_noise_img()
+
+        # need a slightly different transform since we're reading in a numpy array generated via OpenCV
+        alt_transform = transforms.Compose([transforms.ToPILImage(),
+                                    transforms.Resize((224, 224)),
+                                    transforms.ToTensor(),
+                                    transforms.Normalize(mean=[0.485, 0.456, 0.406], 
+                                                        std=[0.229, 0.224, 0.225])
+                                    ])
+        # let's use an actual neural net here which is the subset of the VGG net, since we're only interested in one output
+        features = nn.Sequential(*list(self.vgg_model.features.children())[:self.feature_layer_num+1])
+        features.eval()
+
+        transformed_gen_img = alt_transform(generated_image)
+        transformed_gen_img_batch = transformed_gen_img.unsqueeze(0)
+        curr_gen_tensor = transformed_gen_img_batch.clone()
+        curr_gen_tensor = curr_gen_tensor.to('cuda')
+        curr_gen_tensor.requires_grad = True
+
+        criterion = nn.MSELoss()
+        # it seems they technically don't use SGD in the paper, but it should be fine
+        optimizer = optim.SGD([curr_gen_tensor], lr=learn_rate)
+        scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[1000,1500], gamma=0.5)
+
+        for _ in range(0, num_epoch):
+            optimizer.zero_grad()
+            gen_feature_layer = features.forward(curr_gen_tensor)
+            loss = criterion(gen_feature_layer, self.orig_content)
+            print("Loss = ", str(loss))
+            loss.backward()
+            optimizer.step() 
+            scheduler.step()
+
+        final_img = curr_gen_tensor.squeeze(0).cpu().detach().numpy().transpose()
+        cv2.imshow('test1',generated_image)
+        cv2.imshow('test',final_img)
+        cv2.waitKey()
+        return final_img
     
 if __name__ == '__main__':
+    cuda = torch.cuda.is_available()
+    if cuda:
+        torch.set_default_tensor_type('torch.cuda.FloatTensor')
     path_king_crab = Path(__file__).resolve().parent.parent / "tests/test_imgs/alaskan_king_crab.jpg"
     myExtractor = ContentExtractor(path_king_crab)
     # myExtractor.visualize_activations([0, 1, 2, 3])
     # myExtractor.visualize_activations([26, 27, 28, 29, 30])
     # myExtractor.visualize_original_content()
+    myExtractor.generate_content_image(num_epoch=2000, learn_rate=100)

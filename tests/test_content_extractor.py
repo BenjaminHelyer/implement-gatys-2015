@@ -2,6 +2,7 @@
 from pathlib import Path
 
 import pytest
+import torch
 
 from src.content_extractor import ContentExtractor
 
@@ -16,6 +17,10 @@ def test_vgg_predictions(img_path,expected_pred):
     Acts as a sanity test to ensure the model which
     ContentExtractor uses is yielding plausible predictions.
     """
+    cuda = torch.cuda.is_available()
+    if cuda:
+        torch.set_default_tensor_type('torch.cuda.FloatTensor')
+        
     uutContentExtractor = ContentExtractor(img_path)
     actual_preds = uutContentExtractor.get_top_k_predictions()
     print(actual_preds) # turn on viewing these preds with -s in pytest
