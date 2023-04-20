@@ -9,11 +9,15 @@ generation can still yield some interesting results.
 For instance, one can generate content on a modified version of the original image with 
 a portion of the original image blocked out. As the generated output shows, the content 
 generator "fills in" the content of the blocked out portion while keeping the "style" 
-(in this case, color) the same.  
-![Example of Generated Content](example_generated_content.jpg)
+(in this case, color) the same:  
+<p align="center">
+  <img src="example_generated_content.jpg" />
+</p>
 
-We can visualize the content layer that we specify as well.  
-![Example of Content Layer Activation](example_content_layer.jpg)
+We can visualize the activations in content layer that we specify as well:
+<p align="center">
+  <img src="example_content_layer.jpg" width="300" height="250"/>
+</p>
 
 # VGG Wrapper
 A wrapper is provided to the VGG model, which allows a higher level interaction
