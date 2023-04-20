@@ -50,6 +50,12 @@ class ContentExtractor:
         transformed_img_batch = transformed_img_batch.to(device='cuda')
         return transformed_img_batch
     
+    def _postprocess_img(self, img_tensor):
+        """Post-processes the image such that it is viewable for a human in OpenCV."""
+        bgr_img = img_tensor.squeeze(0).cpu().detach().numpy().transpose()
+        postprocessed_img = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2RGB)
+        return postprocessed_img
+    
     def _generate_white_noise_img(self):
         """Generates a white noise image based on a seed."""
         uniform_noise = np.zeros((224, 224),dtype=np.uint8)
@@ -175,8 +181,7 @@ class ContentExtractor:
             optimizer.step() 
             scheduler.step()
 
-        bgr_img = curr_gen_tensor.squeeze(0).cpu().detach().numpy().transpose()
-        final_img = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2RGB)
+        final_img = self._postprocess_img(curr_gen_tensor)
         return final_img
     
 if __name__ == '__main__':

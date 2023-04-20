@@ -49,10 +49,6 @@ def test_content_extraction_same_img(base_img_path):
     uutContentExtractor = ContentExtractor(base_img_path)
 
     generated_content = uutContentExtractor.generate_content_image(base_img_path=base_img_path)
-
-    # note that we do have to do some post-processing, but this is fair, this is the exact
-    # same steps that we did for the generated image
-    orig_image_post_transform = uutContentExtractor.orig_img.squeeze(0).cpu().numpy().transpose()
-    orig_image_final = cv2.cvtColor(orig_image_post_transform, cv2.COLOR_BGR2RGB)
+    orig_image_final = uutContentExtractor._postprocess_img(uutContentExtractor.orig_img)
 
     np.testing.assert_array_equal(orig_image_final, generated_content)
