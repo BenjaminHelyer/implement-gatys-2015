@@ -165,7 +165,7 @@ class ContentExtractor:
         criterion = nn.MSELoss()
         # it seems they technically don't use SGD in the paper, but it should be fine
         optimizer = optim.SGD([curr_gen_tensor], lr=learn_rate)
-        scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[500,1000], gamma=0.5)
+        scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[500,750], gamma=0.5)
 
         for _ in range(0, num_epoch):
             optimizer.zero_grad()
@@ -185,10 +185,11 @@ if __name__ == '__main__':
         torch.set_default_tensor_type('torch.cuda.FloatTensor')
     path_king_crab = Path(__file__).resolve().parent.parent / "tests/test_imgs/alaskan_king_crab.jpg"
     path_english_setter = Path(__file__).resolve().parent.parent / "tests/test_imgs/english_setter.jpg"
+    path_modified_crab = Path(__file__).resolve().parent.parent / "tests/test_imgs/modified_alaskan_king_crab.jpg"
     myExtractor = ContentExtractor(path_king_crab)
     # myExtractor.visualize_activations([0, 1, 2, 3])
     # myExtractor.visualize_activations([26, 27, 28, 29, 30])
     # myExtractor.visualize_original_content()
-    gen_content = myExtractor.generate_content_image(num_epoch=10, learn_rate=100, base_img_path=path_king_crab)
+    gen_content = myExtractor.generate_content_image(num_epoch=1000, learn_rate=100, base_img_path=path_modified_crab)
     cv2.imshow('Generated Content Image',gen_content)
     cv2.waitKey()
