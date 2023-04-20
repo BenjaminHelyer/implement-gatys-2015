@@ -175,7 +175,8 @@ class ContentExtractor:
             optimizer.step() 
             scheduler.step()
 
-        final_img = curr_gen_tensor.squeeze(0).cpu().detach().numpy().transpose()
+        bgr_img = curr_gen_tensor.squeeze(0).cpu().detach().numpy().transpose()
+        final_img = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2RGB)
         return final_img
     
 if __name__ == '__main__':
@@ -188,6 +189,6 @@ if __name__ == '__main__':
     # myExtractor.visualize_activations([0, 1, 2, 3])
     # myExtractor.visualize_activations([26, 27, 28, 29, 30])
     # myExtractor.visualize_original_content()
-    gen_content = myExtractor.generate_content_image(num_epoch=1000, learn_rate=100, base_img_path=path_english_setter)
+    gen_content = myExtractor.generate_content_image(num_epoch=10, learn_rate=100, base_img_path=path_king_crab)
     cv2.imshow('Generated Content Image',gen_content)
     cv2.waitKey()
