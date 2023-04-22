@@ -7,7 +7,7 @@ broadly, in the results related to the problem of texture transfer.
 
 Here is an example result of style transfer from this implementation:
 <p align="center">
-  <img src="example_generated_style.jpg" />
+  <img src="example_generated_style.jpg" width="300" height="250" />
 </p>
 
 # Content Extraction
