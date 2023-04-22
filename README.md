@@ -5,9 +5,10 @@ Implementation of "A Neural Algorithm of Artistic Style" by (Gatys et al, 2015).
 The key insights from the Gatys papers lie in the extraction of style, or more
 broadly, in the results related to the problem of texture transfer.
 
-Here is an example result of style transfer from this implementation:
+Here's an example of generated style, where we started with a random white noise
+image and resulted in a style close to Van Gogh's Starry Night:
 <p align="center">
-  <img src="example_generated_style.jpg" width="300" height="250" />
+  <img src="example_generated_style_starry_night.jpg" width="300" height="250" />
 </p>
 
 # Content Extraction

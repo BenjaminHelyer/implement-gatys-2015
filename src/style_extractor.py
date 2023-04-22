@@ -148,7 +148,7 @@ class StyleExtractor:
         criterion = self.loss_criterion
         # it seems they technically don't use SGD in the paper, but it should be fine
         optimizer = optim.SGD([curr_gen_tensor], lr=learn_rate)
-        scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[400, 450], gamma=0.5)
+        scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[500, 1000, 1500, 2000], gamma=0.5)
 
         for _ in range(0, num_epoch):
             optimizer.zero_grad()
@@ -176,6 +176,6 @@ if __name__ == '__main__':
     myExtractor = StyleExtractor(path_van_gogh, [1, 3, 7, 10, 15, 19], loss_weights=[10, 50, 100, 100, 50, 10])
     print(myExtractor.orig_grams)
     print(len(myExtractor.orig_grams))
-    gen_style = myExtractor.generate_style_image(num_epoch=500, learn_rate=100, base_img_path=path_king_crab)
+    gen_style = myExtractor.generate_style_image(num_epoch=2500, learn_rate=50)
     cv2.imshow('Generated Style Image',gen_style)
     cv2.waitKey()
