@@ -1,10 +1,18 @@
 # implement-gatys-2015
 Implementation of "A Neural Algorithm of Artistic Style" by (Gatys et al, 2015).
 
+# Style Extraction
+The key insights from the Gatys papers lie in the extraction of style, or more
+broadly, in the results related to the problem of texture transfer.
+
+Here is an example result of style transfer from this implementation:
+<p align="center">
+  <img src="example_generated_style.jpg" />
+</p>
+
 # Content Extraction
 This implementation provides an interface for content extraction, the ContentExtractor class.
-The class primarily allows one to extract content from a given image. By itself, content
-generation can still yield some interesting results.  
+By itself, content generation can still yield some interesting results.  
 
 For instance, one can generate content on a modified version of the original image with 
 a portion of the original image blocked out. As the generated output shows, the content 

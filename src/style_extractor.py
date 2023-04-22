@@ -20,13 +20,13 @@ class StyleTotalLoss(nn.Module):
     of several MSE losses. This is because the loss is dependent
     on the loss of a set of Gram matrices, not just one tensor.
     """
-    def __init__(self):
+    def __init__(self, weights=None):
         super(StyleTotalLoss, self).__init__()
+        self.weights = weights
 
     def forward(self, 
                 input_grams, 
-                target_grams,
-                weights = None):
+                target_grams):
         mse = nn.MSELoss(reduction='mean')
         loss = 0.0
 
@@ -34,19 +34,20 @@ class StyleTotalLoss(nn.Module):
             raise ValueError
 
         for i in range(len(input_grams)):
-            if weights is None:
+            if self.weights is None:
                 loss += mse(input_grams[i], target_grams[i])
             else:
-                if len(weights) != len(input_grams):
+                if len(self.weights) != len(input_grams):
                     raise ValueError
                 else:
-                    loss += weights[i]*mse(input_grams[i], target_grams[i])
+                    loss += self.weights[i]*mse(input_grams[i], target_grams[i])
         return loss
 
 class StyleExtractor:
     def __init__(self,
                 orig_img_path,
-                feature_layer_nums):
+                feature_layer_nums,
+                loss_weights = None):
         """Class for extracting the style of a given image.
         
         orig_img_path: path to the image that we want to extract the style from
@@ -59,6 +60,11 @@ class StyleExtractor:
         self.orig_img = self.vgg.preprocess_img(self.orig_img_path)
         self.orig_feature_nets = self.initialize_feature_nets()
         self.orig_grams = self.get_gram_matrices(self.orig_img, self.orig_feature_nets)
+
+        if loss_weights == None:
+            self.loss_criterion = StyleTotalLoss()
+        else:
+            self.loss_criterion = StyleTotalLoss(weights=loss_weights)
 
     def get_gram_matrices(self, img_tensor, feature_nets, track_grad=False):
         """Gets the Gram matrices for a given image tensor."""
@@ -139,10 +145,10 @@ class StyleExtractor:
             curr_gen_tensor = transformed_gen_img_batch.clone()
             curr_gen_tensor.requires_grad = True
 
-        criterion = StyleTotalLoss()
+        criterion = self.loss_criterion
         # it seems they technically don't use SGD in the paper, but it should be fine
         optimizer = optim.SGD([curr_gen_tensor], lr=learn_rate)
-        scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[400], gamma=0.5)
+        scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[400, 450], gamma=0.5)
 
         for _ in range(0, num_epoch):
             optimizer.zero_grad()
@@ -167,9 +173,9 @@ if __name__ == '__main__':
     path_modified_crab = Path(__file__).resolve().parent.parent / "tests/test_imgs/modified_alaskan_king_crab.jpg"
     path_van_gogh = Path(__file__).resolve().parent.parent / "tests/test_imgs/van_gogh_1.jpg"
     
-    myExtractor = StyleExtractor(path_van_gogh, [1, 3, 7, 10, 15, 19])
+    myExtractor = StyleExtractor(path_van_gogh, [1, 3, 7, 10, 15, 19], loss_weights=[10, 50, 100, 100, 50, 10])
     print(myExtractor.orig_grams)
     print(len(myExtractor.orig_grams))
-    gen_style = myExtractor.generate_style_image(num_epoch=100, learn_rate=100, base_img_path=path_english_setter)
+    gen_style = myExtractor.generate_style_image(num_epoch=500, learn_rate=100, base_img_path=path_king_crab)
     cv2.imshow('Generated Style Image',gen_style)
     cv2.waitKey()
