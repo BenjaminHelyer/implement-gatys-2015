@@ -46,7 +46,7 @@ class StyleTotalLoss(nn.Module):
 class StyleExtractor:
     def __init__(self,
                 orig_img_path,
-                feature_layer_nums = [1, 3, 5, 7]):
+                feature_layer_nums):
         """Class for extracting the style of a given image.
         
         orig_img_path: path to the image that we want to extract the style from
@@ -57,26 +57,42 @@ class StyleExtractor:
         self.feature_layer_nums = feature_layer_nums
 
         self.orig_img = self.vgg.preprocess_img(self.orig_img_path)
-        self.orig_grams = self.get_gram_matrices(self.orig_img)
+        self.orig_feature_nets = self.initialize_feature_nets()
+        self.orig_grams = self.get_gram_matrices(self.orig_img, self.orig_feature_nets)
 
-    def get_gram_matrices(self, img_tensor, track_grad=False):
-        """Gets the Gram matrices for a given image tensor.
+    def get_gram_matrices(self, img_tensor, feature_nets, track_grad=False):
+        """Gets the Gram matrices for a given image tensor."""
+        gram_matrices_list = []
+        for net in feature_nets:
+                curr_layer = net.forward(img_tensor)
+                gram = self.calculate_gram_matrix(curr_layer)
+                gram_matrices_list += [gram]
+        return gram_matrices_list
+    
+    def initialize_feature_nets(self, track_grad=False):
+        """Initializes the neural networks for all the feature layers.
         
+        This avoids the problem of intializing these over and over again,
+        which leads to all sorts of issues (not just performance).
+
+        Why we're using these "feature_nets": we define a different neural network
+        for each feature layer, since we're interested in doing a forward
+        pass on several layers. The neural net depth depends on the feature
+        layer we are aiming at, where the last layer in the given neural net
+        is the given feature layer.
+
         Note that the feature layer numbers are set in the
         class constructor, not in this function. This is
         because it is assumed that we want to use the same
         feature layers for the entire life of this class.
         """
-        gram_matrices_list = []
-        feature_layer_nums = self.feature_layer_nums
-        for num in feature_layer_nums:
+        feature_nets = []
+        for num in self.feature_layer_nums:
             with torch.no_grad() if track_grad else nullcontext():
                 features = nn.Sequential(*list(self.vgg.model.features.children())[:num+1])
                 features.eval()
-                curr_layer = features.forward(img_tensor)
-                gram = self.calculate_gram_matrix(curr_layer)
-                gram_matrices_list += [gram]
-        return gram_matrices_list
+                feature_nets += [features]
+        return feature_nets
         
     def calculate_gram_matrix(self, layer):
         """Compute the Gram matrix of a batch of features.
@@ -110,7 +126,7 @@ class StyleExtractor:
 
     def generate_style_image(self, num_epoch = 10, learn_rate = 0.1, base_img_path=None):
         """Generates an image that is similar in style to the original image."""
-        # let's use an actual neural net here which is the subset of the VGG net, since we're only interested in one output
+        gen_feature_nets = self.initialize_feature_nets(track_grad=True)
         
         if base_img_path is None:
             img_path = 'rand_img.jpg'
@@ -126,13 +142,15 @@ class StyleExtractor:
         criterion = StyleTotalLoss()
         # it seems they technically don't use SGD in the paper, but it should be fine
         optimizer = optim.SGD([curr_gen_tensor], lr=learn_rate)
-        scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[500,750], gamma=0.5)
+        scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[400], gamma=0.5)
 
         for _ in range(0, num_epoch):
             optimizer.zero_grad()
-            gen_grams = self.get_gram_matrices(curr_gen_tensor, track_grad=True)
+            gen_grams = self.get_gram_matrices(curr_gen_tensor, gen_feature_nets, track_grad=True)
             loss = criterion(gen_grams, self.orig_grams)
-            loss.backward()
+            if _ % 50 == 0:
+                print(loss)
+            loss.backward(retain_graph=True) # TODO: figure out whether we actually should retain graph here
             optimizer.step() 
             scheduler.step()
 
@@ -147,10 +165,11 @@ if __name__ == '__main__':
     path_king_crab = Path(__file__).resolve().parent.parent / "tests/test_imgs/alaskan_king_crab.jpg"
     path_english_setter = Path(__file__).resolve().parent.parent / "tests/test_imgs/english_setter.jpg"
     path_modified_crab = Path(__file__).resolve().parent.parent / "tests/test_imgs/modified_alaskan_king_crab.jpg"
+    path_van_gogh = Path(__file__).resolve().parent.parent / "tests/test_imgs/van_gogh_1.jpg"
     
-    myExtractor = StyleExtractor(path_king_crab)
+    myExtractor = StyleExtractor(path_van_gogh, [1, 3, 7, 10, 15, 19])
     print(myExtractor.orig_grams)
     print(len(myExtractor.orig_grams))
-    gen_style = myExtractor.generate_style_image(num_epoch=50, learn_rate=100)
+    gen_style = myExtractor.generate_style_image(num_epoch=100, learn_rate=100, base_img_path=path_english_setter)
     cv2.imshow('Generated Style Image',gen_style)
     cv2.waitKey()
