@@ -88,16 +88,7 @@ class ContentExtractor:
             img_path = 'rand_img.jpg'
             generated_image = self._generate_white_noise_img()
             cv2.imwrite(img_path, generated_image)
-
-            # need a slightly different transform since we're reading in a numpy array generated via OpenCV
-            alt_transform = transforms.Compose([transforms.ToPILImage(),
-                                        transforms.Resize((224, 224)),
-                                        transforms.ToTensor(),
-                                        transforms.Normalize(mean=[0.485, 0.456, 0.406], 
-                                                            std=[0.229, 0.224, 0.225])
-                                        ])
-
-            curr_gen_tensor = self.vgg.preprocess_img(img_path, transform=alt_transform)
+            curr_gen_tensor = self.vgg.preprocess_img(img_path)
             curr_gen_tensor.requires_grad = True
         else:
             transformed_gen_img_batch = self.vgg.preprocess_img(base_img_path)
