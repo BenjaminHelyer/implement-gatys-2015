@@ -12,6 +12,7 @@ import cv2
 import numpy as np
 
 from vgg_wrapper import VggWrapper
+from img_process_helper import ImgProcessHelper
 
 class StyleTotalLoss(nn.Module):
     """Custom loss function based on the style total loss.
@@ -53,6 +54,7 @@ class StyleExtractor:
         orig_img_path: path to the image that we want to extract the style from
         """
         self.vgg = VggWrapper()
+        self.img_helper = ImgProcessHelper()
         
         self.orig_img_path = orig_img_path
         self.feature_layer_nums = feature_layer_nums
@@ -117,26 +119,13 @@ class StyleExtractor:
         gram.div_(batch_size * num_features * height * width)  # Normalize by size
         return gram
 
-    def _postprocess_img(self, img_tensor):
-        """Post-processes the image such that it is viewable for a human in OpenCV."""
-        bgr_img = img_tensor.squeeze(0).cpu().detach().numpy().transpose()
-        postprocessed_img = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2RGB)
-        return postprocessed_img
-    
-    def _generate_white_noise_img(self):
-        """Generates a white noise image based on a seed."""
-        uniform_noise = np.zeros((224, 224),dtype=np.uint8)
-        cv2.randu(uniform_noise,0,255)
-        rgb_uniform_noise = cv2.cvtColor(uniform_noise,cv2.COLOR_GRAY2RGB)
-        return rgb_uniform_noise
-
     def generate_style_image(self, num_epoch = 10, learn_rate = 0.1, base_img_path=None):
         """Generates an image that is similar in style to the original image."""
         gen_feature_nets = self.initialize_feature_nets(track_grad=True)
         
         if base_img_path is None:
             img_path = 'rand_img.jpg'
-            generated_image = self._generate_white_noise_img()
+            generated_image = self.img_helper._generate_white_noise_img()
             cv2.imwrite(img_path, generated_image)
             curr_gen_tensor = self.vgg.preprocess_img(img_path)
             curr_gen_tensor.requires_grad = True
@@ -160,7 +149,7 @@ class StyleExtractor:
             optimizer.step() 
             scheduler.step()
 
-        final_img = self._postprocess_img(curr_gen_tensor)
+        final_img = self.img_helper._postprocess_img(curr_gen_tensor)
         return final_img
     
 if __name__ == '__main__':

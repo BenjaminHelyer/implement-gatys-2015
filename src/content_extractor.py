@@ -14,6 +14,7 @@ import numpy as np
 import cv2
 
 from vgg_wrapper import VggWrapper
+from img_process_helper import ImgProcessHelper
 
 class ContentExtractor:
     def __init__(self, 
@@ -28,25 +29,13 @@ class ContentExtractor:
         which corresponds to layer number 19 by the ordering in our implementation.
         """
         self.vgg = VggWrapper()
+        self.img_helper = ImgProcessHelper()
         
         self.orig_img_path = orig_img_path
         self.feature_layer_num = feature_layer_num
 
         self.orig_img = self.vgg.preprocess_img(self.orig_img_path)
         self.orig_content = self._extract_content(self.feature_layer_num)
-    
-    def _postprocess_img(self, img_tensor):
-        """Post-processes the image such that it is viewable for a human in OpenCV."""
-        bgr_img = img_tensor.squeeze(0).cpu().detach().numpy().transpose()
-        postprocessed_img = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2RGB)
-        return postprocessed_img
-    
-    def _generate_white_noise_img(self):
-        """Generates a white noise image based on a seed."""
-        uniform_noise = np.zeros((224, 224),dtype=np.uint8)
-        cv2.randu(uniform_noise,0,255)
-        rgb_uniform_noise = cv2.cvtColor(uniform_noise,cv2.COLOR_GRAY2RGB)
-        return rgb_uniform_noise
     
     def _get_feature_generated_img(self, generated_img):
         """Gets the feature layer for the generated image."""
@@ -91,7 +80,7 @@ class ContentExtractor:
 
         if base_img_path is None:
             img_path = 'rand_img.jpg'
-            generated_image = self._generate_white_noise_img()
+            generated_image = self.img_helper._generate_white_noise_img()
             cv2.imwrite(img_path, generated_image)
             curr_gen_tensor = self.vgg.preprocess_img(img_path)
             curr_gen_tensor.requires_grad = True
@@ -113,7 +102,7 @@ class ContentExtractor:
             optimizer.step() 
             scheduler.step()
 
-        final_img = self._postprocess_img(curr_gen_tensor)
+        final_img = self.img_helper._postprocess_img(curr_gen_tensor)
         return final_img
     
 if __name__ == '__main__':

@@ -23,6 +23,6 @@ def test_style_extraction_same_img(base_img_path):
     uutStyleExtractor = StyleExtractor(base_img_path, [1, 3])
 
     generated_style = uutStyleExtractor.generate_style_image(base_img_path=base_img_path)
-    orig_image_final = uutStyleExtractor._postprocess_img(uutStyleExtractor.orig_img)
+    orig_image_final = uutStyleExtractor.img_helper._postprocess_img(uutStyleExtractor.orig_img)
 
     np.testing.assert_array_equal(orig_image_final, generated_style)

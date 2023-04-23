@@ -28,6 +28,6 @@ def test_content_extraction_same_img(base_img_path):
     uutContentExtractor = ContentExtractor(base_img_path)
 
     generated_content = uutContentExtractor.generate_content_image(base_img_path=base_img_path)
-    orig_image_final = uutContentExtractor._postprocess_img(uutContentExtractor.orig_img)
+    orig_image_final = uutContentExtractor.img_helper._postprocess_img(uutContentExtractor.orig_img)
 
     np.testing.assert_array_equal(orig_image_final, generated_content)
