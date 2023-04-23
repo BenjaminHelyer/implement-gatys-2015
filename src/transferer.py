@@ -95,7 +95,7 @@ if __name__ == '__main__':
     path_modified_crab = Path(__file__).resolve().parent.parent / "tests/test_imgs/modified_alaskan_king_crab.jpg"
     path_van_gogh = Path(__file__).resolve().parent.parent / "tests/test_imgs/van_gogh_1.jpg"
 
-    myTransferer = Transferer(path_van_gogh, path_king_crab)
-    generated_img = myTransferer.generate_styled_content(num_epoch=2500, learn_rate=500)
+    myTransferer = Transferer(path_van_gogh, path_king_crab, weight_content_loss=0.01)
+    generated_img = myTransferer.generate_styled_content(num_epoch=2500, learn_rate=250)
     cv2.imshow('Generated Image with Style Transfer',generated_img)
     cv2.waitKey()

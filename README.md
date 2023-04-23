@@ -1,6 +1,12 @@
 # implement-gatys-2015
-Implementation of "A Neural Algorithm of Artistic Style" by (Gatys et al, 2015). Since this
-well-known paper is also based on "Texture Synthesis using Convolutional Neural Networks" by
+Implementation of "A Neural Algorithm of Artistic Style" by (Gatys et al, 2015).
+
+The goal of this project was to implement the components of these papers separately
+such that insights can be gleaned by examining each component individually. For this
+reason, there are three main classes in this implementation: one for style-content
+composition, one for style transfer, and one for content transfer.
+
+Since the well-known paper is also based on "Texture Synthesis using Convolutional Neural Networks" by
 (Gatys et al, 2015), this also includes an implementation of that paper which can be interfaced
 with independently by using the StyleExtractor class.
 
