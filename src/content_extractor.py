@@ -78,11 +78,16 @@ class ContentExtractor:
         axes.axis('off')
         plt.show()
 
+    def initialize_feature_nets(self):
+        """Initializes the feature networks for the content features."""
+        features = nn.Sequential(*list(self.vgg.model.features.children())[:self.feature_layer_num+1])
+        features.eval()
+        return features
+
     def generate_content_image(self, num_epoch = 10, learn_rate = 0.1, base_img_path=None):
         """Generates an image that is similar in content to the original image."""
         # let's use an actual neural net here which is the subset of the VGG net, since we're only interested in one output
-        features = nn.Sequential(*list(self.vgg.model.features.children())[:self.feature_layer_num+1])
-        features.eval()
+        features = self.initialize_feature_nets()
 
         if base_img_path is None:
             img_path = 'rand_img.jpg'

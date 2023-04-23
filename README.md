@@ -5,8 +5,8 @@ well-known paper is also based on "Texture Synthesis using Convolutional Neural 
 with independently by using the StyleExtractor class.
 
 # Style Extraction
-The key insights from the Gatys papers lie in the extraction of style, or more
-broadly, in the results related to the problem of texture transfer.
+The key insights from the Gatys papers lie in the extraction of style, or put 
+differently, in the results related to the problem of texture transfer.
 
 Here's an example of generated style, where we started with a random white noise
 image and resulted in a style close to Van Gogh's Starry Night:
