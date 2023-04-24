@@ -1,5 +1,6 @@
 # implement-gatys-2015
 Implementation of "A Neural Algorithm of Artistic Style" by (Gatys et al, 2015).
+PyTorch was chosen for this implementation.
 
 The goal of this project was to implement the components of this paper separately
 such that insights could be gleaned by examining each component individually. For this
