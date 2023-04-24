@@ -2,7 +2,7 @@
 Implementation of "A Neural Algorithm of Artistic Style" by (Gatys et al, 2015).
 
 The goal of this project was to implement the components of this paper separately
-such that insights can be gleaned by examining each component individually. For this
+such that insights could be gleaned by examining each component individually. For this
 reason, there are three main classes in this implementation: one for style-content
 composition (the main idea discussed in the paper), one for style transfer, 
 and one for content transfer.
@@ -11,7 +11,10 @@ One can learn a lot by playing with these classes individually. As an example,
 interesting results can be found from content extraction alone, such as using
 content extraction to "fill in" details on another image.
 
-# Style-Content Composition (Meat of "A Neural Algorithm of Artistic Style")
+# Style-Content Composition
+This is the meat of "A Neural Algorithm of Artistic Style." The style of one
+image can be combined with the content of another to produce an interesting
+generated image.
 
 # Style Extraction
 The key insights from the Gatys papers lie in the extraction of style, or put 
