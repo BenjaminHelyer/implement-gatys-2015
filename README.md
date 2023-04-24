@@ -17,6 +17,13 @@ This is the meat of "A Neural Algorithm of Artistic Style." The style of one
 image can be combined with the content of another to produce an interesting
 generated image.
 
+Here's an example of the style of Van Gogh's Starry Night composed with the
+content of a photo of a tree in front of a house:
+
+<p align="center">
+  <img src="example_style_content_composition.jpg" width="300" height="250" />
+</p>
+
 # Style Extraction
 The key insights from the Gatys papers lie in the extraction of style, or put 
 differently, in the results related to the problem of texture transfer.

@@ -28,18 +28,26 @@ class Transferer:
                  orig_style_img_path,
                  orig_content_img_path,
                  weight_style_loss=1,
-                 weight_content_loss=1):
+                 weight_content_loss=1,
+                 layers_for_style=[1,3,7,10,15,19],
+                 layer_for_content=20):
         """Used for facilitating the transfer of the style of 
         one image onto the content of another."""
         self.vgg = VggWrapper()
         self.img_helper = ImgProcessHelper()
 
-        self.contentExtractor = ContentExtractor(orig_content_img_path)
-        self.styleExtractor = StyleExtractor(orig_style_img_path, [1, 3, 7, 10, 15, 19])
+        self.contentExtractor = ContentExtractor(orig_content_img_path,feature_layer_num=layer_for_content)
+        self.styleExtractor = StyleExtractor(orig_style_img_path, layers_for_style)
 
         self.loss_criterion = TransferTotalLoss(weight_style_loss, weight_content_loss)
     
-    def generate_styled_content(self, num_epoch = 10, learn_rate = 0.1, base_img_path=None):
+    def generate_styled_content(self, 
+                                num_epoch = 2500, 
+                                learn_rate = 250, 
+                                base_img_path=None,
+                                scheduler_milestones=[500, 1000, 1500, 2000],
+                                scheduler_gamma=0.5,
+                                optimizer_choice=optim.Adam):
         """Generates an image with the style of one image and the content of another.
         
         Can use a random white noise image as the starting point or use another
@@ -62,9 +70,10 @@ class Transferer:
 
         content_criterion = nn.MSELoss()
         total_loss_criterion = self.loss_criterion
-        # it seems they technically don't use SGD in the paper, but it should be fine
-        optimizer = optim.SGD([curr_gen_tensor], lr=learn_rate)
-        scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[500, 1000, 1500, 2000], gamma=0.5)
+        optimizer = optimizer_choice([curr_gen_tensor], lr=learn_rate)
+        scheduler = optim.lr_scheduler.MultiStepLR(optimizer, 
+                                                   milestones=scheduler_milestones, 
+                                                   gamma=scheduler_gamma)
 
         for _ in range(0, num_epoch):
             optimizer.zero_grad()
@@ -94,8 +103,9 @@ if __name__ == '__main__':
     path_english_setter = Path(__file__).resolve().parent.parent / "tests/test_imgs/english_setter.jpg"
     path_modified_crab = Path(__file__).resolve().parent.parent / "tests/test_imgs/modified_alaskan_king_crab.jpg"
     path_van_gogh = Path(__file__).resolve().parent.parent / "tests/test_imgs/van_gogh_1.jpg"
+    path_elgin_tree = Path(__file__).resolve().parent.parent / "tests/test_imgs/elgin_tree.jpg"
 
-    myTransferer = Transferer(path_van_gogh, path_king_crab, weight_content_loss=0.01)
-    generated_img = myTransferer.generate_styled_content(num_epoch=2500, learn_rate=250)
+    myTransferer = Transferer(path_van_gogh, path_elgin_tree, weight_content_loss=0.1)
+    generated_img = myTransferer.generate_styled_content(num_epoch=500, learn_rate=0.1, scheduler_milestones=[1000, 2000])
     cv2.imshow('Generated Image with Style Transfer',generated_img)
     cv2.waitKey()
