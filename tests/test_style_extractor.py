@@ -1,4 +1,4 @@
-"""Tests for the content extractor class."""
+"""Tests for the transferer class."""
 from pathlib import Path
 import sys
 

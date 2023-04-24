@@ -42,8 +42,8 @@ class Transferer:
         self.loss_criterion = TransferTotalLoss(weight_style_loss, weight_content_loss)
     
     def generate_styled_content(self, 
-                                num_epoch = 2500, 
-                                learn_rate = 250, 
+                                num_epoch = 10, 
+                                learn_rate = 0.1, 
                                 base_img_path=None,
                                 scheduler_milestones=[500, 1000, 1500, 2000],
                                 scheduler_gamma=0.5,
