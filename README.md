@@ -2,9 +2,7 @@
 Implementation of "A Neural Algorithm of Artistic Style" by (Gatys et al, 2015).
 PyTorch was chosen for this implementation.
 
-The goal of this project was to implement the components of this paper separately
-such that insights could be gleaned by examining each component individually. For this
-reason, there are three main classes in this implementation: one for style-content
+There are three main classes in this implementation: one for style-content
 composition (the main idea discussed in the paper), one for style transfer, 
 and one for content transfer.
 
